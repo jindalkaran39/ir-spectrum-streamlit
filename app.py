@@ -1,0 +1,54 @@
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+from io import BytesIO
+
+st.title("IR Spectrum Generator")
+st.write("Upload a CSV or Excel file with Wavenumber (cm⁻¹) and Transmittance (%T) data")
+
+uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx"])
+
+def parse_file(file):
+    if file.name.endswith(".csv"):
+        df = pd.read_csv(file)
+    elif file.name.endswith(".xlsx"):
+        df = pd.read_excel(file)
+    else:
+        raise ValueError("Unsupported file type")
+
+    df = df.apply(pd.to_numeric, errors='coerce')
+    df.dropna(inplace=True)
+
+    if df.shape[1] >= 2:
+        df.columns = ["Wavenumber", "Transmittance"] + list(df.columns[2:])
+    else:
+        raise ValueError("File must have at least two columns of numeric data.")
+
+    return df
+
+def plot_ir(df):
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(df["Wavenumber"], df["Transmittance"], color="darkblue")
+    ax.invert_xaxis()
+    ax.set_xlabel("Wavenumber (cm⁻¹)")
+    ax.set_ylabel("% Transmittance")
+    ax.set_title("IR Spectrum")
+    ax.grid(True)
+
+    st.pyplot(fig)
+
+    buf = BytesIO()
+    fig.savefig(buf, format="pdf")
+    st.download_button(
+        label="Download PDF",
+        data=buf,
+        file_name="ir_spectrum.pdf",
+        mime="application/pdf"
+    )
+
+if uploaded_file:
+    try:
+        df = parse_file(uploaded_file)
+        plot_ir(df)
+    except Exception as e:
+        st.error(f"Error processing file: {e}")
