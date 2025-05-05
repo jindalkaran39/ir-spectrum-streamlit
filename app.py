@@ -37,10 +37,11 @@ def plot_ir(df):
 
     st.pyplot(fig)
 
+    # Optional: allow user to download the plot
     buf = BytesIO()
     fig.savefig(buf, format="pdf")
     st.download_button(
-        label="Download PDF",
+        label="Download Spectrum as PDF",
         data=buf,
         file_name="ir_spectrum.pdf",
         mime="application/pdf"
